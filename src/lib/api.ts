@@ -246,3 +246,30 @@ export async function fetchBroadcastHistory(): Promise<BroadcastLogItem[]> {
   }
   return data.data || [];
 }
+
+export async function uploadImageToS3(file: File): Promise<{ url: string; filename: string }> {
+  const formData = new FormData();
+  formData.append('image', file);
+
+  const token = localStorage.getItem('adminToken');
+  const headers: Record<string, string> = {};
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  const response = await fetch(`${API_BASE_URL}/upload/image`, {
+    method: 'POST',
+    headers,
+    body: formData,
+  });
+
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.message || 'Failed to upload image to AWS S3');
+  }
+
+  return {
+    url: data.data.url,
+    filename: data.data.filename,
+  };
+}

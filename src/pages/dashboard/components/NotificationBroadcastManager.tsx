@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { sendNotificationBroadcast, fetchBroadcastHistory, type BroadcastLogItem } from '../../../lib/api';
-import { Send, Megaphone, Image as ImageIcon, Users, RefreshCw, CheckCircle, AlertCircle, Clock, Sparkles } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { sendNotificationBroadcast, fetchBroadcastHistory, uploadImageToS3, type BroadcastLogItem } from '../../../lib/api';
+import { Send, Megaphone, Image as ImageIcon, Users, RefreshCw, CheckCircle, AlertCircle, Clock, Sparkles, UploadCloud, Trash2, ExternalLink } from 'lucide-react';
 
 export const NotificationBroadcastManager: React.FC = () => {
   const [title, setTitle] = useState('');
@@ -8,12 +8,18 @@ export const NotificationBroadcastManager: React.FC = () => {
   const [imageUrl, setImageUrl] = useState('');
   const [type, setType] = useState('broadcast');
 
+  const [uploadingS3, setUploadingS3] = useState(false);
+  const [uploadedFileName, setUploadedFileName] = useState<string | null>(null);
+  const [isUrlMode, setIsUrlMode] = useState(false);
+
   const [sending, setSending] = useState(false);
   const [loadingHistory, setLoadingHistory] = useState(true);
   const [history, setHistory] = useState<BroadcastLogItem[]>([]);
 
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     loadHistory();
@@ -29,6 +35,40 @@ export const NotificationBroadcastManager: React.FC = () => {
     } finally {
       setLoadingHistory(false);
     }
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      setErrorMsg('Please select a valid image file (PNG, JPG, WEBP).');
+      return;
+    }
+
+    setUploadingS3(true);
+    setErrorMsg(null);
+
+    try {
+      const res = await uploadImageToS3(file);
+      setImageUrl(res.url);
+      setUploadedFileName(res.filename);
+      setSuccessMsg(`Image successfully uploaded to AWS S3 bucket! (${res.filename})`);
+      setTimeout(() => setSuccessMsg(null), 4000);
+    } catch (err: any) {
+      console.error('S3 Upload Error:', err);
+      setErrorMsg(err.message || 'Failed to upload image to AWS S3.');
+    } finally {
+      setUploadingS3(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
+  const handleRemoveImage = () => {
+    setImageUrl('');
+    setUploadedFileName(null);
   };
 
   const handleSendBroadcast = async (e: React.FormEvent) => {
@@ -58,6 +98,7 @@ export const NotificationBroadcastManager: React.FC = () => {
       setTitle('');
       setMessage('');
       setImageUrl('');
+      setUploadedFileName(null);
       loadHistory();
       setTimeout(() => setSuccessMsg(null), 5000);
     } catch (err: any) {
@@ -94,7 +135,7 @@ export const NotificationBroadcastManager: React.FC = () => {
           <div>
             <h1 className="text-2xl font-bold text-white tracking-tight">Notification Broadcast</h1>
             <p className="text-sm text-slate-400 mt-1">
-              Broadcast push notifications with title, rich message, and image to all registered app users
+              Broadcast push notifications with title, rich message, and AWS S3 hosted banner images to all app users
             </p>
           </div>
         </div>
@@ -170,46 +211,132 @@ export const NotificationBroadcastManager: React.FC = () => {
             />
           </div>
 
-          {/* Banner Image URL */}
-          <div className="space-y-2">
+          {/* AWS S3 Banner Image Upload Section */}
+          <div className="space-y-3">
             <div className="flex items-center justify-between">
               <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400">
-                Banner Image URL (Optional)
+                Banner Image (AWS S3 Bucket)
               </label>
-              <span className="text-xs text-slate-500">HTTPS Image Link</span>
-            </div>
-            <div className="relative">
-              <ImageIcon className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
-              <input
-                type="url"
-                value={imageUrl}
-                onChange={(e) => setImageUrl(e.target.value)}
-                placeholder="https://example.com/banner-image.png"
-                className="w-full pl-10 pr-4 py-3 bg-slate-950/80 border border-white/10 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
-              />
+              <button
+                type="button"
+                onClick={() => setIsUrlMode(!isUrlMode)}
+                className="text-xs text-emerald-400 hover:text-emerald-300 font-medium underline transition-all"
+              >
+                {isUrlMode ? '📁 Switch to File Upload' : '🔗 Use External URL'}
+              </button>
             </div>
 
-            {/* Image Presets */}
-            <div className="flex flex-wrap items-center gap-2 pt-1">
-              <span className="text-xs text-slate-500 font-medium">Sample Presets:</span>
-              {sampleImages.map((img, idx) => (
-                <button
-                  key={idx}
-                  type="button"
-                  onClick={() => setImageUrl(img.url)}
-                  className="px-2.5 py-1 rounded-lg bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700 text-[11px] transition-all"
-                >
-                  {img.name}
-                </button>
-              ))}
-            </div>
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleFileUpload}
+              accept="image/*"
+              className="hidden"
+            />
+
+            {!isUrlMode ? (
+              /* AWS S3 File Drag & Drop Upload Zone */
+              <div>
+                {imageUrl && imageUrl.includes('s3') ? (
+                  <div className="rounded-xl border border-emerald-500/40 bg-emerald-500/5 p-4 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                          AWS S3 Bucket (gocalai)
+                        </span>
+                        <span className="text-xs text-slate-300 truncate max-w-[200px]">
+                          {uploadedFileName || 'Image Uploaded'}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => fileInputRef.current?.click()}
+                          className="px-2.5 py-1 rounded-lg bg-slate-800 text-slate-200 hover:bg-slate-700 text-xs font-semibold"
+                        >
+                          Replace File
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleRemoveImage}
+                          className="p-1 rounded-lg bg-rose-500/10 text-rose-400 hover:bg-rose-500/20"
+                          title="Remove Image"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="relative rounded-lg overflow-hidden border border-white/10 aspect-video bg-slate-950">
+                      <img src={imageUrl} alt="Uploaded S3 Banner" className="w-full h-full object-cover" />
+                      <a
+                        href={imageUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="absolute bottom-2 right-2 px-2 py-1 rounded-lg bg-slate-900/80 text-white text-[10px] font-medium flex items-center gap-1 hover:bg-black"
+                      >
+                        <ExternalLink className="w-3 h-3" /> View S3 File
+                      </a>
+                    </div>
+                  </div>
+                ) : (
+                  <div
+                    onClick={() => fileInputRef.current?.click()}
+                    className="border-2 border-dashed border-white/15 hover:border-emerald-500/50 rounded-2xl p-6 text-center cursor-pointer bg-slate-950/50 hover:bg-slate-950 transition-all space-y-3 group"
+                  >
+                    <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center mx-auto border border-emerald-500/20 group-hover:scale-110 transition-transform">
+                      {uploadingS3 ? (
+                        <RefreshCw className="w-6 h-6 animate-spin" />
+                      ) : (
+                        <UploadCloud className="w-6 h-6" />
+                      )}
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-white">
+                        {uploadingS3 ? 'Uploading image to AWS S3 Bucket...' : 'Click or Drag & Drop image to upload to AWS S3'}
+                      </p>
+                      <p className="text-xs text-slate-400 mt-1">
+                        Supports PNG, JPG, WEBP (Max 10MB) • Bucket: <span className="text-emerald-400 font-mono">gocalai (us-east-1)</span>
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              /* External Image URL Input Mode */
+              <div className="space-y-2">
+                <div className="relative">
+                  <ImageIcon className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
+                  <input
+                    type="url"
+                    value={imageUrl}
+                    onChange={(e) => setImageUrl(e.target.value)}
+                    placeholder="https://example.com/banner-image.png"
+                    className="w-full pl-10 pr-4 py-3 bg-slate-950/80 border border-white/10 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+                  />
+                </div>
+                <div className="flex flex-wrap items-center gap-2 pt-1">
+                  <span className="text-xs text-slate-500 font-medium">Sample Presets:</span>
+                  {sampleImages.map((img, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => setImageUrl(img.url)}
+                      className="px-2.5 py-1 rounded-lg bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700 text-[11px] transition-all"
+                    >
+                      {img.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Submit Action Button */}
           <div className="pt-2">
             <button
               type="submit"
-              disabled={sending}
+              disabled={sending || uploadingS3}
               className="w-full flex items-center justify-center gap-2 py-3.5 px-6 rounded-xl bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 text-white font-bold text-sm shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/40 hover:scale-[1.01] active:scale-[0.99] transition-all disabled:opacity-50"
             >
               {sending ? (
