@@ -7,11 +7,27 @@ export interface AdminUser {
   role: 'superadmin' | 'admin' | 'user';
   isBanned?: boolean;
   subscriptionStatus?: 'inactive' | 'active' | 'trial' | 'expired';
+  currentPlan?: 'basic' | 'premium';
+  hasSelectedSubscription?: boolean;
   hasCompletedOnboarding?: boolean;
   createdAt: string;
   lastActiveAt?: string;
   age?: number;
   gender?: string;
+}
+
+export interface SubscriptionPlan {
+  _id: string;
+  name: string;
+  type: 'basic' | 'premium';
+  price: number;
+  billingCycle: 'monthly' | 'yearly';
+  features: string[];
+  dailyLimits: {
+    foodScans: number;
+    productScans: number;
+  };
+  isActive: boolean;
 }
 
 export interface Pagination {
@@ -125,6 +141,35 @@ export async function deleteUserAccount(userId: string): Promise<{ message: stri
   const data = await response.json();
   if (!response.ok) {
     throw new Error(data.error || 'Failed to delete user');
+  }
+  return data;
+}
+
+export async function fetchAdminSubscriptionPlans(): Promise<{ plans: SubscriptionPlan[] }> {
+  const response = await fetch(`${API_BASE_URL}/admin/subscription-plans`, {
+    headers: getHeaders(),
+  });
+
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error || 'Failed to fetch subscription plans');
+  }
+  return data;
+}
+
+export async function updateSubscriptionPlan(
+  planId: string,
+  updates: Partial<SubscriptionPlan>
+): Promise<{ message: string; plan: SubscriptionPlan }> {
+  const response = await fetch(`${API_BASE_URL}/admin/subscription-plans/${planId}`, {
+    method: 'PUT',
+    headers: getHeaders(),
+    body: JSON.stringify(updates),
+  });
+
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error || 'Failed to update subscription plan');
   }
   return data;
 }
