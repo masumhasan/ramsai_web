@@ -173,3 +173,37 @@ export async function updateSubscriptionPlan(
   }
   return data;
 }
+
+export interface LegalContentItem {
+  _id?: string;
+  type: 'privacy' | 'terms';
+  title: string;
+  content: string;
+  updatedAt?: string;
+}
+
+export async function fetchLegalContent(type: 'privacy' | 'terms'): Promise<LegalContentItem> {
+  const response = await fetch(`${API_BASE_URL}/legal/${type}`);
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.message || `Failed to fetch ${type} content`);
+  }
+  return data.data;
+}
+
+export async function updateLegalContent(
+  type: 'privacy' | 'terms',
+  payload: { title?: string; content: string }
+): Promise<{ message: string; data: LegalContentItem }> {
+  const response = await fetch(`${API_BASE_URL}/admin/legal/${type}`, {
+    method: 'PUT',
+    headers: getHeaders(),
+    body: JSON.stringify(payload),
+  });
+
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.message || `Failed to update ${type} content`);
+  }
+  return data;
+}
