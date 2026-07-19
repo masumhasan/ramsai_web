@@ -251,7 +251,7 @@ export async function uploadImageToS3(file: File): Promise<{ url: string; filena
   const formData = new FormData();
   formData.append('image', file);
 
-  const token = localStorage.getItem('adminToken');
+  const token = localStorage.getItem('gocal_admin_token') || localStorage.getItem('adminToken');
   const headers: Record<string, string> = {};
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
@@ -265,7 +265,7 @@ export async function uploadImageToS3(file: File): Promise<{ url: string; filena
 
   const data = await response.json();
   if (!response.ok) {
-    throw new Error(data.message || 'Failed to upload image to AWS S3');
+    throw new Error(data.message || data.error || 'Failed to upload image to AWS S3');
   }
 
   return {
