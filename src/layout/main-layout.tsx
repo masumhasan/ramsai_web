@@ -1,0 +1,19 @@
+
+import { Footer } from "@/components/common/Footer";
+import Navbar from "@/components/common/Navbar";
+import { Outlet, ScrollRestoration } from "react-router";
+
+const MainLayout = () => {
+  return (
+    <>
+      <Navbar />
+      <div className="body-height max-w-480 mx-auto overflow-x-hidden">
+        <Outlet />
+      </div>
+      <Footer />
+      <ScrollRestoration />
+    </>
+  );
+};
+
+export default MainLayout;
