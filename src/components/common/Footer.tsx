@@ -48,10 +48,10 @@ export const Footer = () => {
               Legal
             </h4>
             <nav className="flex flex-col gap-2">
-              <Link to="/terms-and-conditions" className="text-sm text-muted-foreground hover:text-foreground hover:translate-x-0.5 transition-all duration-200 inline-block w-fit">
+              <Link to="/terms" className="text-sm text-muted-foreground hover:text-foreground hover:translate-x-0.5 transition-all duration-200 inline-block w-fit">
                 Terms & Conditions
               </Link>
-              <Link to="/privacy-policy" className="text-sm text-muted-foreground hover:text-foreground hover:translate-x-0.5 transition-all duration-200 inline-block w-fit">
+              <Link to="/privacy" className="text-sm text-muted-foreground hover:text-foreground hover:translate-x-0.5 transition-all duration-200 inline-block w-fit">
                 Privacy Policy
               </Link>
             </nav>

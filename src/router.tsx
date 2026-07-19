@@ -19,11 +19,11 @@ export const router = createBrowserRouter([
         element: <Home />,
       },
       {
-        path: 'terms-and-conditions',
+        path: 'terms',
         element: <Terms />,
       },
       {
-        path: 'privacy-policy',
+        path: 'privacy',
         element: <Privacy />,
       },
     ],

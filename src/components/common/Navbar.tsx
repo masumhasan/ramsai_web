@@ -8,8 +8,8 @@ import { Collapse } from "../animation/collapse";
 
 const navLinks = [
     { to: "/", label: "HOME" },
-    { to: "/terms-and-conditions", label: "TERMS & CONDITION" },
-    { to: "/privacy-policy", label: "PRIVACY POLICY" },
+    { to: "/terms", label: "TERMS & CONDITION" },
+    { to: "/privacy", label: "PRIVACY POLICY" },
 ];
 
 const Navbar = () => {
