@@ -35,6 +35,7 @@ import {
   Shield,
   FileText,
   CreditCard,
+  Megaphone,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -43,8 +44,9 @@ import { UserEditModal } from './components/UserEditModal';
 import { UserDeleteModal } from './components/UserDeleteModal';
 import { PlanEditModal } from './components/PlanEditModal';
 import { LegalContentManager } from './components/LegalContentManager';
+import { NotificationBroadcastManager } from './components/NotificationBroadcastManager';
 
-type DashboardTab = 'users' | 'plans' | 'privacy' | 'terms';
+type DashboardTab = 'users' | 'plans' | 'privacy' | 'terms' | 'broadcast';
 
 export default function AdminDashboard() {
   const { user: currentAdmin, isAuthenticated, logout } = useAdminAuth();
@@ -219,6 +221,12 @@ export default function AdminDashboard() {
       id: 'terms' as DashboardTab,
       label: 'Terms Manager',
       icon: FileText,
+    },
+    {
+      id: 'broadcast' as DashboardTab,
+      label: 'Notification Broadcast',
+      icon: Megaphone,
+      badge: 'ALL',
     },
   ];
 
@@ -857,6 +865,13 @@ export default function AdminDashboard() {
         {activeTab === 'terms' && (
           <div className="animate-in fade-in duration-300">
             <LegalContentManager type="terms" />
+          </div>
+        )}
+
+        {/* TAB 5: NOTIFICATION BROADCAST MANAGER */}
+        {activeTab === 'broadcast' && (
+          <div className="animate-in fade-in duration-300">
+            <NotificationBroadcastManager />
           </div>
         )}
       </main>

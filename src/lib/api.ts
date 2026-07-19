@@ -207,3 +207,42 @@ export async function updateLegalContent(
   }
   return data;
 }
+
+export interface BroadcastLogItem {
+  title: string;
+  message: string;
+  imageUrl?: string;
+  sentAt: string;
+  recipientsCount: number;
+}
+
+export async function sendNotificationBroadcast(payload: {
+  title: string;
+  message: string;
+  imageUrl?: string;
+  type?: string;
+}): Promise<{ message: string; data: any }> {
+  const response = await fetch(`${API_BASE_URL}/notifications/broadcast`, {
+    method: 'POST',
+    headers: getHeaders(),
+    body: JSON.stringify(payload),
+  });
+
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.message || 'Failed to send broadcast notification');
+  }
+  return data;
+}
+
+export async function fetchBroadcastHistory(): Promise<BroadcastLogItem[]> {
+  const response = await fetch(`${API_BASE_URL}/notifications/broadcast/history`, {
+    headers: getHeaders(),
+  });
+
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.message || 'Failed to fetch broadcast history');
+  }
+  return data.data || [];
+}
