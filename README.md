@@ -36,7 +36,7 @@ GocalAI is a modern, high-performance web application and administrative managem
 - **Animations:** [Framer Motion](https://www.framer.com/motion/)
 - **Routing:** [React Router v7](https://reactrouter.com/)
 - **Icons:** [Lucide React](https://lucide.dev/)
-- **API Client:** Axios / Fetch API integrated with AWS Deployed Backend (`http://98.85.34.11:5000/api`)
+- **API Client:** Axios / Fetch API integrated with AWS Deployed Backend (`https://backend.getgocal.com/api`)
 
 ---
 
@@ -89,7 +89,7 @@ Make sure you have **Node.js** (v18+) and **npm** installed.
 3. **Configure Environment Variables:**
    Create or edit `.env` in the root directory:
    ```env
-   VITE_API_URL=http://98.85.34.11:5000/api
+   VITE_API_URL=https://backend.getgocal.com/api
    ```
 
 4. **Run Development Server:**
@@ -120,4 +120,4 @@ pm2 start serve --name "ramsai-web" -- dist -s -l 3000
 pm2 save
 ```
 
-Access the live dashboard at: `http://98.85.34.11:3000`
+Access the live dashboard at: `https://getgocal.com` or `https://www.getgocal.com`
