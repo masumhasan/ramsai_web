@@ -273,3 +273,43 @@ export async function uploadImageToS3(file: File): Promise<{ url: string; filena
     filename: data.data.filename,
   };
 }
+
+export interface AdminFeedback {
+  _id: string;
+  userId: {
+    _id: string;
+    name: string;
+    email: string;
+    role: string;
+  } | null;
+  title: string;
+  description: string;
+  images: string[];
+  createdAt: string;
+}
+
+export interface GetFeedbacksResponse {
+  feedbacks: AdminFeedback[];
+  pagination: Pagination;
+}
+
+export async function fetchAdminFeedbacks(params: {
+  page?: number;
+  limit?: number;
+  search?: string;
+}): Promise<GetFeedbacksResponse> {
+  const query = new URLSearchParams();
+  if (params.page) query.append('page', params.page.toString());
+  if (params.limit) query.append('limit', params.limit.toString());
+  if (params.search) query.append('search', params.search);
+
+  const response = await fetch(`${API_BASE_URL}/admin/feedbacks?${query.toString()}`, {
+    headers: getHeaders(),
+  });
+
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.message || data.error || 'Failed to fetch feedbacks');
+  }
+  return data;
+}
