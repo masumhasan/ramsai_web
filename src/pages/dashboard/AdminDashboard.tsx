@@ -36,6 +36,7 @@ import {
   FileText,
   CreditCard,
   Megaphone,
+  MessageSquare,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -45,8 +46,9 @@ import { UserDeleteModal } from './components/UserDeleteModal';
 import { PlanEditModal } from './components/PlanEditModal';
 import { LegalContentManager } from './components/LegalContentManager';
 import { NotificationBroadcastManager } from './components/NotificationBroadcastManager';
+import { FeedbackManager } from './components/FeedbackManager';
 
-type DashboardTab = 'users' | 'plans' | 'privacy' | 'terms' | 'broadcast';
+type DashboardTab = 'users' | 'plans' | 'privacy' | 'terms' | 'broadcast' | 'feedback';
 
 export default function AdminDashboard() {
   const { user: currentAdmin, isAuthenticated, logout } = useAdminAuth();
@@ -227,6 +229,11 @@ export default function AdminDashboard() {
       label: 'Notification Broadcast',
       icon: Megaphone,
       badge: 'ALL',
+    },
+    {
+      id: 'feedback' as DashboardTab,
+      label: 'User Feedbacks',
+      icon: MessageSquare,
     },
   ];
 
@@ -872,6 +879,13 @@ export default function AdminDashboard() {
         {activeTab === 'broadcast' && (
           <div className="animate-in fade-in duration-300">
             <NotificationBroadcastManager />
+          </div>
+        )}
+
+        {/* TAB 6: USER FEEDBACKS MANAGER */}
+        {activeTab === 'feedback' && (
+          <div className="animate-in fade-in duration-300">
+            <FeedbackManager />
           </div>
         )}
       </main>
