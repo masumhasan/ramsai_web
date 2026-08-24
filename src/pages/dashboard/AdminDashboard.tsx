@@ -630,7 +630,6 @@ export default function AdminDashboard() {
                         <tr>
                           <th className="py-3.5 px-4">User</th>
                           <th className="py-3.5 px-4">Role</th>
-                          <th className="py-3.5 px-4">Plan</th>
                           <th className="py-3.5 px-4">Subscription</th>
                           <th className="py-3.5 px-4">Joined</th>
                           <th className="py-3.5 px-4 text-right">Actions</th>
@@ -673,17 +672,7 @@ export default function AdminDashboard() {
                               </span>
                             </td>
 
-                            <td className="py-3.5 px-4">
-                              {u.currentPlan === 'premium' ? (
-                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-500/15 text-amber-400 border border-amber-500/30">
-                                  <Sparkles className="w-3 h-3" /> PREMIUM
-                                </span>
-                              ) : (
-                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-slate-800 text-slate-400 border border-white/10">
-                                  BASIC
-                                </span>
-                              )}
-                            </td>
+
 
                             <td className="py-3.5 px-4">
                               {u.subscriptionStatus === 'active' ? (
