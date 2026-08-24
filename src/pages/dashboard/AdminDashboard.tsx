@@ -78,6 +78,12 @@ export default function AdminDashboard() {
     limit: 10,
     totalPages: 1,
   });
+  const [stats, setStats] = useState<{
+    totalUsers: number;
+    bannedUsers: number;
+    admins: number;
+    activeSubscribers: number;
+  } | null>(null);
   const [isLoadingUsers, setIsLoadingUsers] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -91,6 +97,7 @@ export default function AdminDashboard() {
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [subscriptionFilter, setSubscriptionFilter] = useState<string>('all');
   const [page, setPage] = useState(1);
   const limit = 10;
   const sortBy = 'createdAt';
@@ -136,6 +143,9 @@ export default function AdminDashboard() {
       });
       setUsers(res.users);
       setPagination(res.pagination);
+      if (res.stats) {
+        setStats(res.stats);
+      }
     } catch (err: any) {
       setError(err.message || 'Failed to fetch user list');
     } finally {
@@ -186,18 +196,26 @@ export default function AdminDashboard() {
     }
   };
 
-  // Filter client-side by status
-  const filteredUsers = users.filter((u) => {
-    if (statusFilter === 'banned') return u.isBanned === true;
-    if (statusFilter === 'active') return !u.isBanned;
-    return true;
-  });
+  // Filter client-side by status and subscription status
+  const filteredUsers = users
+    .filter((u) => {
+      if (statusFilter === 'banned') return u.isBanned === true;
+      if (statusFilter === 'active') return !u.isBanned;
+      return true;
+    })
+    .filter((u) => {
+      if (subscriptionFilter === 'all') return true;
+      if (subscriptionFilter === 'inactive') return !u.subscriptionStatus || u.subscriptionStatus === 'inactive';
+      return u.subscriptionStatus === subscriptionFilter;
+    });
 
   // Calculate statistics
   const totalUsersCount = pagination.total;
-  const bannedUsersCount = users.filter((u) => u.isBanned).length;
-  const adminsCount = users.filter((u) => u.role === 'admin' || u.role === 'superadmin').length;
-  const activeSubscribersCount = users.filter((u) => u.currentPlan === 'premium' || u.subscriptionStatus === 'active').length;
+  const bannedUsersCount = stats ? stats.bannedUsers : users.filter((u) => u.isBanned).length;
+  const adminsCount = stats ? stats.admins : users.filter((u) => u.role === 'admin' || u.role === 'superadmin').length;
+  const activeSubscribersCount = stats
+    ? stats.activeSubscribers
+    : users.filter((u) => u.currentPlan === 'premium' || u.subscriptionStatus === 'active' || u.subscriptionStatus === 'trial').length;
 
   if (!isAuthenticated) return null;
 
@@ -521,7 +539,7 @@ export default function AdminDashboard() {
 
             {/* Filter and Search Bar Section */}
             <div className="bg-slate-900/80 border border-white/10 rounded-2xl p-4 shadow-xl space-y-4 backdrop-blur-xl">
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
                 <div className="relative">
                   <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                   <input
@@ -563,6 +581,20 @@ export default function AdminDashboard() {
                 </div>
 
                 <div className="flex items-center gap-2">
+                  <select
+                    value={subscriptionFilter}
+                    onChange={(e) => setSubscriptionFilter(e.target.value)}
+                    className="w-full px-3 py-2 bg-slate-950/80 border border-white/10 rounded-xl text-xs text-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
+                  >
+                    <option value="all">All Subscriptions</option>
+                    <option value="active">Active Subs</option>
+                    <option value="trial">Trial Subs</option>
+                    <option value="expired">Expired Subs</option>
+                    <option value="inactive">Inactive Subs</option>
+                  </select>
+                </div>
+
+                <div className="flex items-center gap-2">
                   <button
                     type="button"
                     onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
@@ -599,7 +631,7 @@ export default function AdminDashboard() {
                           <th className="py-3.5 px-4">User</th>
                           <th className="py-3.5 px-4">Role</th>
                           <th className="py-3.5 px-4">Plan</th>
-                          <th className="py-3.5 px-4">Status</th>
+                          <th className="py-3.5 px-4">Subscription</th>
                           <th className="py-3.5 px-4">Joined</th>
                           <th className="py-3.5 px-4 text-right">Actions</th>
                         </tr>
@@ -613,7 +645,14 @@ export default function AdminDashboard() {
                                   {u.name?.charAt(0)?.toUpperCase() || 'U'}
                                 </div>
                                 <div className="truncate max-w-[200px]">
-                                  <p className="font-semibold text-white truncate">{u.name}</p>
+                                  <div className="flex items-center gap-1.5">
+                                    <p className="font-semibold text-white truncate">{u.name}</p>
+                                    {u.isBanned && (
+                                      <span className="bg-rose-500/15 text-rose-400 border border-rose-500/30 px-1.5 py-0.2 rounded text-[9px] font-bold uppercase shrink-0">
+                                        Banned
+                                      </span>
+                                    )}
+                                  </div>
                                   <p className="text-[11px] text-slate-400 truncate">{u.email}</p>
                                 </div>
                               </div>
@@ -647,13 +686,21 @@ export default function AdminDashboard() {
                             </td>
 
                             <td className="py-3.5 px-4">
-                              {u.isBanned ? (
-                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-rose-500/15 text-rose-300 border border-rose-500/30">
-                                  <Ban className="w-3 h-3" /> Banned
+                              {u.subscriptionStatus === 'active' ? (
+                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
+                                  <CheckCircle2 className="w-3 h-3" /> Active
+                                </span>
+                              ) : u.subscriptionStatus === 'trial' ? (
+                                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-amber-500/15 text-amber-300 border border-amber-500/30">
+                                  <Zap className="w-3.5 h-3.5" /> Trial
+                                </span>
+                              ) : u.subscriptionStatus === 'expired' ? (
+                                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-rose-500/15 text-rose-300 border border-rose-500/30">
+                                  <Ban className="w-3.5 h-3.5" /> Expired
                                 </span>
                               ) : (
-                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
-                                  <CheckCircle2 className="w-3 h-3" /> Active
+                                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-slate-800 text-slate-400 border border-white/10">
+                                  None
                                 </span>
                               )}
                             </td>

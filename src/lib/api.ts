@@ -14,6 +14,10 @@ export interface AdminUser {
   lastActiveAt?: string;
   age?: number;
   gender?: string;
+  subscriptionProductId?: string;
+  subscriptionWillRenew?: boolean;
+  revenueCatAppUserId?: string;
+  subscriptionUpdatedAt?: string;
 }
 
 export interface SubscriptionPlan {
@@ -40,6 +44,12 @@ export interface Pagination {
 export interface GetUsersResponse {
   users: AdminUser[];
   pagination: Pagination;
+  stats?: {
+    totalUsers: number;
+    bannedUsers: number;
+    admins: number;
+    activeSubscribers: number;
+  };
 }
 
 export interface LoginResponse {
